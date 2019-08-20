@@ -14,6 +14,7 @@ var myPort string
 var nServers int 
 var CliConn []*net.UDPConn
 var ServConn *net.UDPConn 
+var logicalClock int
 
 func CheckError(err error) {
 	if err != nil {
@@ -31,7 +32,14 @@ func PrintError(err error) {
 func doServerJob() {
 	buf := make([]byte, 1024)
 	n, addr, err := ServConn.ReadFromUDP(buf)
-	fmt.Println("Received ", string(buf[0:n]), " from ", addr)
+	logicalClock_msg, err := strconv.Atoi(string(buf[0:n]))
+
+	if logicalClock < logicalClock_msg {
+		logicalClock = logicalClock_msg	
+	}
+	logicalClock++
+
+	fmt.Printf("Received %s from %s\nCurrent Logical Clock = %d\n", string(buf[0:n]), addr, logicalClock)
 
 	if err != nil {
 		fmt.Println("Error: ",err)
@@ -90,16 +98,19 @@ func main() {
 
 	ch := make(chan string)
 	go readInput(ch)
+	logicalClock = 0
 	
 	for {
 		go doServerJob()
 		select {
 			case x, valid := <-ch:
 				if valid {
-					fmt.Printf("Recebi do teclado: %s \n", x)
-					//Client
-					for j := 0; j < nServers; j++ {
-						go doClientJob(j, 100)
+					i1, err := strconv.Atoi(x)
+					if (err == nil && i1 < len(os.Args) - 1 ){
+						fmt.Printf("Notificar porta[%s]=%s: \n", x, os.Args[i1+2])
+						go doClientJob(i1, logicalClock)
+					} else {
+						fmt.Println("Numero invalido")
 					}
 				} else {
 					fmt.Println("Channel closed!")
