@@ -30,7 +30,7 @@ func PrintError(err error) {
 
 func doServerJob() {
 	buf := make([]byte, 1024)
-	n, addr, err := ServConn.ReadFromUDP(buf)
+	n, _, err := ServConn.ReadFromUDP(buf)
 	logicalClock_msg, err := strconv.Atoi(string(buf[0:n]))
 
 	if logicalClock < logicalClock_msg {
@@ -38,7 +38,7 @@ func doServerJob() {
 	}
 	logicalClock++
 
-	fmt.Printf("Received %s from %s\nCurrent Logical Clock = %d\n", string(buf[0:n]), addr, logicalClock)
+	fmt.Printf("Current Logical Clock = %d\n", logicalClock)
 
 	if err != nil {
 		fmt.Println("Error: ",err)

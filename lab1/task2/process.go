@@ -38,7 +38,7 @@ func PrintError(err error) {
 
 func doServerJob() {
 	buf := make([]byte, 1024)
-	n, addr, err := ServConn.ReadFromUDP(buf)
+	n, _, err := ServConn.ReadFromUDP(buf)
 	var logicalClockMessage ClockStruct
 	err = json.Unmarshal(buf[:n], &logicalClockMessage)
 	if err != nil {
@@ -52,7 +52,7 @@ func doServerJob() {
 		}
 	}
 
-	fmt.Printf("Received %s from %s\nCurrent Logical Clock = %d\n", string(buf[0:n]), addr, logicalClock.Clocks)
+	fmt.Printf("Current Logical Clock = %d\n", logicalClock.Clocks[1:nServers+1])
 
 	if err != nil {
 		fmt.Println("Error: ",err)
@@ -79,7 +79,7 @@ func initConnections() {
 	myPort = os.Args[myPortId+1]
 	nServers = len(os.Args) - 2
 
-    ServerAddr, err := net.ResolveUDPAddr("udp",myPort);
+    ServerAddr, err := net.ResolveUDPAddr("udp",myPort)
     CheckError(err)
     Conn, err := net.ListenUDP("udp", ServerAddr)
 	CheckError(err)
@@ -126,7 +126,7 @@ func main() {
 				if valid {
 					i1, err := strconv.Atoi(x)
 					if (err == nil && i1 < len(os.Args) - 1 ){
-						fmt.Printf("Notify port %s\n\n", os.Args[i1+1])
+						fmt.Printf("Notify port %s\n", os.Args[i1+1])
 						go doClientJob(i1-1, logicalClock)
 					} else {
 						fmt.Println("Invalid number")
