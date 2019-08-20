@@ -58,7 +58,8 @@ func doClientJob(otherProcess int, i int) {
 }
 
 func initConnections() {
-	myPort = os.Args[1]
+	myPortId, err := strconv.Atoi(os.Args[1])
+	myPort = os.Args[myPortId+1]
 	nServers = len(os.Args) - 2
 
     ServerAddr, err := net.ResolveUDPAddr("udp",myPort);
@@ -69,7 +70,6 @@ func initConnections() {
 	ServConn = Conn
 	
 	for i := 0; i < nServers; i++ {
-
 		ServerAddr,err := net.ResolveUDPAddr("udp","127.0.0.1" + os.Args[i+2])
 		CheckError(err)
 		LocalAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
