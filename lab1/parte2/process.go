@@ -15,6 +15,7 @@ type ClockStruct struct {
 }
 
 var err string
+var myPortId int
 var myPort string 
 var nServers int 
 var CliConn []*net.UDPConn
@@ -39,22 +40,24 @@ func doServerJob() {
 	n, addr, err := ServConn.ReadFromUDP(buf)
 	logicalClock_msg, err := strconv.Atoi(string(buf[0:n]))
 
-	if logicalClock < logicalClock_msg {
-		logicalClock = logicalClock_msg	
-	}
-	logicalClock++
+	// if logicalClock < logicalClock_msg {
+	// 	logicalClock = logicalClock_msg	
+	// }
+	// logicalClock++
 
-	fmt.Printf("Received %s from %s\nCurrent Logical Clock = %d\n", string(buf[0:n]), addr, logicalClock)
+	// fmt.Printf("Received %s from %s\nCurrent Logical Clock = %d\n", string(buf[0:n]), addr, logicalClock)
+	fmt.Printf("Received %s from %s\nCurrent Logical Clock = %d\n", string(buf[0:n]), addr, logicalClock_msg)
 
 	if err != nil {
 		fmt.Println("Error: ",err)
 	} 
 }
 
-func doClientJob(otherProcess int, i int) {
+func doClientJob(otherProcess int, i ClockStruct) {
 	Conn := CliConn[otherProcess]
-	msg := strconv.Itoa(i)
-	i++
+	msg := strconv.Itoa(123)
+	// msg := strconv.Itoa(i)
+	// i++
 	buf := []byte(msg)
 	_,err := Conn.Write(buf)
 	if err != nil {
@@ -63,7 +66,9 @@ func doClientJob(otherProcess int, i int) {
 }
 
 func initConnections() {
-	myPort = os.Args[1]
+	id, err := strconv.Atoi(os.Args[1])
+	myPortId = id
+	myPort = os.Args[myPortId+1]
 	nServers = len(os.Args) - 2
 
     ServerAddr, err := net.ResolveUDPAddr("udp",myPort);
@@ -74,7 +79,6 @@ func initConnections() {
 	ServConn = Conn
 	
 	for i := 0; i < nServers; i++ {
-
 		ServerAddr,err := net.ResolveUDPAddr("udp","127.0.0.1" + os.Args[i+2])
 		CheckError(err)
 		LocalAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
@@ -97,13 +101,15 @@ func readInput(ch chan string) {
 func main() {
 	initConnections()
 	defer ServConn.Close()
+	logicalClock.Id = myPortId
+	logicalClock.Clocks = append(logicalClock.Clocks, 0)
 	for i := 0; i < nServers; i++ {
+		logicalClock.Clocks = append(logicalClock.Clocks, 0)
 		defer CliConn[i].Close()
 	}
 
 	ch := make(chan string)
 	go readInput(ch)
-	logicalClock = 0
 	
 	for {
 		go doServerJob()
@@ -112,8 +118,8 @@ func main() {
 				if valid {
 					i1, err := strconv.Atoi(x)
 					if (err == nil && i1 < len(os.Args) - 1 ){
-						fmt.Printf("Notificar porta[%s]=%s: \n", x, os.Args[i1+2])
-						go doClientJob(i1, logicalClock)
+						fmt.Printf("Notificar porta %s\n", os.Args[i1+1])
+						go doClientJob(i1-1, logicalClock)
 					} else {
 						fmt.Println("Numero invalido")
 					}
