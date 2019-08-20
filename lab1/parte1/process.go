@@ -107,8 +107,8 @@ func main() {
 				if valid {
 					i1, err := strconv.Atoi(x)
 					if (err == nil && i1 < len(os.Args) - 1 ){
-						fmt.Printf("Notificar porta[%s]=%s: \n", x, os.Args[i1+2])
-						go doClientJob(i1, logicalClock)
+						fmt.Printf("Notificar porta[%s]=%s: \n", x, os.Args[i1+1])
+						go doClientJob(i1-1, logicalClock)
 					} else {
 						fmt.Println("Numero invalido")
 					}
