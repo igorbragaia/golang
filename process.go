@@ -29,14 +29,12 @@ func PrintError(err error) {
 
 func doServerJob() {
 	buf := make([]byte, 1024)
-    for {
-        n, addr, err := ServConn.ReadFromUDP(buf)
-        fmt.Println("Received ", string(buf[0:n]), " from ", addr)
- 
-        if err != nil {
-            fmt.Println("Error: ",err)
-        } 
-    }
+	n, addr, err := ServConn.ReadFromUDP(buf)
+	fmt.Println("Received ", string(buf[0:n]), " from ", addr)
+
+	if err != nil {
+		fmt.Println("Error: ",err)
+	} 
 }
 
 func doClientJob(otherProcess int, i int) {
