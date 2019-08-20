@@ -8,14 +8,11 @@ import (
 	"time"
 )
 
-//Variáveis globais interessantes para o processo
 var err string
-var myPort string //porta do meu servidor
-var nServers int //qtde de outros processo
-var CliConn []*net.UDPConn //vetor com conexões para os servidores
-//dos outros processos
-var ServConn *net.UDPConn //conexão do meu servidor (onde recebo
-//mensagens dos outros processos)
+var myPort string 
+var nServers int 
+var CliConn []*net.UDPConn
+var ServConn *net.UDPConn 
 
 func CheckError(err error) {
 	if err != nil {
@@ -31,12 +28,10 @@ func PrintError(err error) {
 }
 
 func doServerJob() {
-	//Ler (uma vez somente) da conexão UDP a mensagem
-	//Escrever na tela a msg recebida (indicando o endereço de quem enviou)
 	buf := make([]byte, 1024)
     for {
-        n,addr,err := ServConn.ReadFromUDP(buf)
-        fmt.Println("Received ",string(buf[0:n]), " from ",addr)
+        n, addr, err := ServConn.ReadFromUDP(buf)
+        fmt.Println("Received ", string(buf[0:n]), " from ", addr)
  
         if err != nil {
             fmt.Println("Error: ",err)
@@ -45,8 +40,6 @@ func doServerJob() {
 }
 
 func doClientJob(otherProcess int, i int) {
-	//Enviar uma mensagem (com valor i) para o servidor do processo
-	//otherServer
 	Conn := CliConn[otherProcess]
 	msg := strconv.Itoa(i)
 	i++
@@ -88,17 +81,12 @@ func main() {
 		defer CliConn[i].Close()
 	}
 	
-	//Todo Process fará a mesma coisa: ouvir msg e mandar infinitos i’s para os outros processos
-	
 	i := 0
 	for {
-		//Server
 		go doServerJob()
-		//Client
 		for j := 0; j < nServers; j++ {
 			go doClientJob(j, i)
 		}
-		// Wait a while
 		time.Sleep(time.Second * 1)
 		i++
 	}
