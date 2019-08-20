@@ -25,14 +25,14 @@ var logicalClock ClockStruct
 
 func CheckError(err error) {
 	if err != nil {
-		fmt.Println("Erro: ", err)
+		fmt.Println("Error: ", err)
 		os.Exit(0)
 	}
 }
 
 func PrintError(err error) {
 	if err != nil {
-		fmt.Println("Erro: ", err)
+		fmt.Println("Error: ", err)
 	}
 }
 
@@ -45,13 +45,14 @@ func doServerJob() {
 		fmt.Println("Unmarshal server response failed.")
 	}
 
-	// if logicalClock < logicalClock_msg {
-	// 	logicalClock = logicalClock_msg	
-	// }
-	// logicalClock++
+	logicalClock.Clocks[myPortId]++
+	for i := 1; i < len(logicalClock.Clocks); i++ {
+		if logicalClockMessage.Clocks[i] > logicalClock.Clocks[i] {
+			logicalClock.Clocks[i] = logicalClockMessage.Clocks[i]
+		}
+	}
 
-	// fmt.Printf("Received %s from %s\nCurrent Logical Clock = %d\n", string(buf[0:n]), addr, logicalClock)
-	fmt.Printf("Received %s from %s\nCurrent Logical Clock = %d\n", string(buf[0:n]), addr, logicalClockMessage)
+	fmt.Printf("Received %s from %s\nCurrent Logical Clock = %d\n", string(buf[0:n]), addr, logicalClock.Clocks)
 
 	if err != nil {
 		fmt.Println("Error: ",err)
@@ -125,10 +126,10 @@ func main() {
 				if valid {
 					i1, err := strconv.Atoi(x)
 					if (err == nil && i1 < len(os.Args) - 1 ){
-						fmt.Printf("Notificar porta %s\n\n", os.Args[i1+1])
+						fmt.Printf("Notify port %s\n\n", os.Args[i1+1])
 						go doClientJob(i1-1, logicalClock)
 					} else {
-						fmt.Println("Numero invalido")
+						fmt.Println("Invalid number")
 					}
 				} else {
 					fmt.Println("Channel closed!")
