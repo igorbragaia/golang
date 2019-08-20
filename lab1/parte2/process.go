@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 	"bufio"
+	"encoding/json"
 )
 
 type ClockStruct struct {
@@ -38,7 +39,11 @@ func PrintError(err error) {
 func doServerJob() {
 	buf := make([]byte, 1024)
 	n, addr, err := ServConn.ReadFromUDP(buf)
-	logicalClock_msg, err := strconv.Atoi(string(buf[0:n]))
+	var logicalClockMessage ClockStruct
+	err = json.Unmarshal(buf[:n], &logicalClockMessage)
+	if err != nil {
+		fmt.Println("Unmarshal server response failed.")
+	}
 
 	// if logicalClock < logicalClock_msg {
 	// 	logicalClock = logicalClock_msg	
@@ -46,7 +51,7 @@ func doServerJob() {
 	// logicalClock++
 
 	// fmt.Printf("Received %s from %s\nCurrent Logical Clock = %d\n", string(buf[0:n]), addr, logicalClock)
-	fmt.Printf("Received %s from %s\nCurrent Logical Clock = %d\n", string(buf[0:n]), addr, logicalClock_msg)
+	fmt.Printf("Received %s from %s\nCurrent Logical Clock = %d\n", string(buf[0:n]), addr, logicalClockMessage)
 
 	if err != nil {
 		fmt.Println("Error: ",err)
@@ -55,13 +60,15 @@ func doServerJob() {
 
 func doClientJob(otherProcess int, i ClockStruct) {
 	Conn := CliConn[otherProcess]
-	msg := strconv.Itoa(123)
-	// msg := strconv.Itoa(i)
-	// i++
-	buf := []byte(msg)
-	_,err := Conn.Write(buf)
+
+	jsonRequest, err := json.Marshal(logicalClock)
 	if err != nil {
-		fmt.Println(msg, err)
+		fmt.Println("Marshal connection information failed.")
+	} 
+
+	_, err = Conn.Write(jsonRequest)
+	if err != nil {
+		fmt.Println(jsonRequest, err)
 	}
 }
 
@@ -118,7 +125,7 @@ func main() {
 				if valid {
 					i1, err := strconv.Atoi(x)
 					if (err == nil && i1 < len(os.Args) - 1 ){
-						fmt.Printf("Notificar porta %s\n", os.Args[i1+1])
+						fmt.Printf("Notificar porta %s\n\n", os.Args[i1+1])
 						go doClientJob(i1-1, logicalClock)
 					} else {
 						fmt.Println("Numero invalido")
