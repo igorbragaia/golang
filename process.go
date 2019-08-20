@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"bufio"
 )
 
 var err string
@@ -72,20 +73,39 @@ func initConnections() {
 	}
 }
 
+func readInput(ch chan string) {
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		text, _, _ := reader.ReadLine()
+		ch <- string(text)
+	}
+}
+
 func main() {
 	initConnections()
 	defer ServConn.Close()
 	for i := 0; i < nServers; i++ {
 		defer CliConn[i].Close()
 	}
+
+	ch := make(chan string)
+	go readInput(ch)
 	
-	i := 0
 	for {
 		go doServerJob()
-		for j := 0; j < nServers; j++ {
-			go doClientJob(j, i)
+		select {
+			case x, valid := <-ch:
+				if valid {
+					fmt.Printf("Recebi do teclado: %s \n", x)
+					//Client
+					for j := 0; j < nServers; j++ {
+						go doClientJob(j, 100)
+					}
+				} else {
+					fmt.Println("Channel closed!")
+				}
+			default:
+				time.Sleep(time.Second * 1)
 		}
-		time.Sleep(time.Second * 1)
-		i++
 	}
 }
