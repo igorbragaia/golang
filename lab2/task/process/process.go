@@ -61,10 +61,10 @@ func doServerJob() {
 		if counter == qty {
 			state = "HELD"
 			fmt.Println("ENTROU NA CS")
+			time.Sleep(5 * time.Second)
 			for _, p := range queue {
-				doClientJob(p, logicalClock, "REPLY")
+				doClientJob(p-1, logicalClock, "REPLY")
 			}
-			// wait
 			state = "RELEASED"
 			counter = 0
 			fmt.Println("SAIU DA CS")
