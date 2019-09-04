@@ -62,11 +62,13 @@ func doServerJob() {
 			state = "HELD"
 			fmt.Println("ENTROU NA CS")
 			time.Sleep(5 * time.Second)
+
+			state = "RELEASED"
+			counter = 0
 			for _, p := range queue {
 				doClientJob(p-1, logicalClock, "REPLY")
 			}
-			state = "RELEASED"
-			counter = 0
+			queue = []int{}
 			fmt.Println("SAIU DA CS")
 		}
 	} else if receivedMessage.Text == "REQUEST" {
