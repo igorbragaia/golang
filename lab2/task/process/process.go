@@ -10,18 +10,24 @@ import (
 	"encoding/json"
 )
 
-type ClockStruct struct {
-	Id int
-	Clocks []int
+type Message struct {
+	Time int
+	Processor int
+	Text string
 }
 
+var state string
+var counter int
+var qty int
 var err string
 var myPortId int
-var myPort string 
-var nServers int 
+var myPort string
+var nServers int
 var CliConn []*net.UDPConn
-var ServConn *net.UDPConn 
-var logicalClock ClockStruct
+var ServConn *net.UDPConn
+var logicalClock int
+var logicalClockFreeze int
+var queue []int
 
 func CheckError(err error) {
 	if err != nil {
@@ -39,33 +45,56 @@ func PrintError(err error) {
 func doServerJob() {
 	buf := make([]byte, 1024)
 	n, _, err := ServConn.ReadFromUDP(buf)
-	var logicalClockMessage ClockStruct
-	err = json.Unmarshal(buf[:n], &logicalClockMessage)
+	var receivedMessage Message
+	err = json.Unmarshal(buf[:n], &receivedMessage)
 	if err != nil {
 		fmt.Println("Unmarshal server response failed.")
 	}
 
-	logicalClock.Clocks[myPortId]++
-	for i := 1; i < len(logicalClock.Clocks); i++ {
-		if logicalClockMessage.Clocks[i] > logicalClock.Clocks[i] {
-			logicalClock.Clocks[i] = logicalClockMessage.Clocks[i]
+	if logicalClock < receivedMessage.Time {
+		logicalClock = receivedMessage.Time
+	}
+	logicalClock++
+
+	if receivedMessage.Text == "REPLY" {
+		counter++
+		if counter == qty {
+			state = "HELD"
+			fmt.Println("ENTROU NA CS")
+			for _, p := range queue {
+				doClientJob(p, logicalClock, "REPLY")
+			}
+			// wait
+			state = "RELEASED"
+			counter = 0
+			fmt.Println("SAIU DA CS")
+		}
+	} else if receivedMessage.Text == "REQUEST" {
+		if state == "HELD" || (state == "WANTED" && logicalClockFreeze < receivedMessage.Time) {
+			queue = append(queue, receivedMessage.Processor)
+		} else {
+			doClientJob(receivedMessage.Processor-1, logicalClock, "REPLY")
 		}
 	}
 
-	fmt.Printf("Current Logical Clock = %d\n", logicalClock.Clocks[1:nServers+1])
-
 	if err != nil {
 		fmt.Println("Error: ",err)
-	} 
+	}
 }
 
-func doClientJob(otherProcess int, i ClockStruct) {
+func doClientJob(otherProcess int, logicalClock int, text string) {
 	Conn := CliConn[otherProcess]
 
-	jsonRequest, err := json.Marshal(logicalClock)
+	msg := Message{
+		Time: logicalClock,
+		Processor: myPortId,
+		Text: text,
+	}
+
+	jsonRequest, err := json.Marshal(msg)
 	if err != nil {
 		fmt.Println("Marshal connection information failed.")
-	} 
+	}
 
 	_, err = Conn.Write(jsonRequest)
 	if err != nil {
@@ -78,14 +107,15 @@ func initConnections() {
 	myPortId = id
 	myPort = os.Args[myPortId+1]
 	nServers = len(os.Args) - 2
+	qty = len(os.Args) - 3
 
-    ServerAddr, err := net.ResolveUDPAddr("udp",myPort)
-    CheckError(err)
-    Conn, err := net.ListenUDP("udp", ServerAddr)
+	ServerAddr, err := net.ResolveUDPAddr("udp",myPort)
 	CheckError(err)
-	
+	Conn, err := net.ListenUDP("udp", ServerAddr)
+	CheckError(err)
+
 	ServConn = Conn
-	
+
 	for i := 0; i < nServers; i++ {
 		ServerAddr,err := net.ResolveUDPAddr("udp","127.0.0.1" + os.Args[i+2])
 		CheckError(err)
@@ -93,7 +123,7 @@ func initConnections() {
 		CheckError(err)
 		Conn, err := net.DialUDP("udp", LocalAddr, ServerAddr)
 		CheckError(err)
-		
+
 		CliConn = append(CliConn, Conn)
 	}
 }
@@ -109,33 +139,35 @@ func readInput(ch chan string) {
 func main() {
 	initConnections()
 	defer ServConn.Close()
-	logicalClock.Id = myPortId
-	logicalClock.Clocks = append(logicalClock.Clocks, 0)
+	logicalClock = 1
 	for i := 0; i < nServers; i++ {
-		logicalClock.Clocks = append(logicalClock.Clocks, 0)
 		defer CliConn[i].Close()
 	}
 
+	state = "RELEASED"
+
 	ch := make(chan string)
 	go readInput(ch)
-	
+
 	for {
 		go doServerJob()
 		select {
-			case x, valid := <-ch:
-				if valid {
-					i1, err := strconv.Atoi(x)
-					if (err == nil && i1 < len(os.Args) - 1 ){
-						fmt.Printf("Notify port %s\n", os.Args[i1+1])
-						go doClientJob(i1-1, logicalClock)
-					} else {
-						fmt.Println("Invalid number")
+		case text, valid := <-ch:
+			if valid {
+				if text == "REQUEST" {
+					state = "WANTED"
+					logicalClockFreeze = logicalClock
+					for i := 0; i < nServers; i++ {
+						if i != myPortId - 1 {
+							go doClientJob(i, logicalClock, text)
+						}
 					}
-				} else {
-					fmt.Println("Channel closed!")
 				}
-			default:
-				time.Sleep(time.Second * 1)
+			} else {
+				fmt.Println("Channel closed!")
+			}
+		default:
+			time.Sleep(time.Second * 1)
 		}
 	}
 }

@@ -125,7 +125,7 @@ func main() {
 			case x, valid := <-ch:
 				if valid {
 					i1, err := strconv.Atoi(x)
-					if (err == nil && i1 < len(os.Args) - 1 ){
+					if err == nil && i1 < len(os.Args) - 1 {
 						fmt.Printf("Notify port %s\n", os.Args[i1+1])
 						go doClientJob(i1-1, logicalClock)
 					} else {
