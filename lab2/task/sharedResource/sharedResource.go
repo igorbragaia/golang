@@ -32,7 +32,7 @@ func doServerJob() {
 		fmt.Println("Unmarshal server response failed.")
 	}
 
-	fmt.Printf("[logical clock %d] Processor %d says %s\n", receivedMessage.Time, receivedMessage.Processor, receivedMessage.Text)
+	fmt.Printf("[logical clock %d] Process %d says %s\n", receivedMessage.Time, receivedMessage.Processor, receivedMessage.Text)
 
 	if err != nil {
 		fmt.Println("Error: ",err)

@@ -67,14 +67,14 @@ func doServerJob() {
 
 			state = "RELEASED"
 			counter = 0
-			fmt.Printf("[logical clock %d] Replying to: ", logicalClock)
+			fmt.Printf("[logical clock %d] Replying to: \n", logicalClock)
 			fmt.Println(queue)
 			for _, p := range queue {
 				doClientJob(p-1, logicalClock, "REPLY")
 			}
 			queue = []int{}
 			fmt.Printf("[logical clock %d] SAIU DA CS\n", logicalClock)
-			fmt.Println("*************************************\n")
+			fmt.Println("**************************\n")
 		}
 	} else if receivedMessage.Text == "REQUEST" {
 		if state == "HELD" || (state == "WANTED" && logicalClockFreeze < receivedMessage.Time) {
