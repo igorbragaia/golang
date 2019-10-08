@@ -1,0 +1,1 @@
+./wordcount --mode sequential --file files/teste.txt --chunksize 100 --reducejobs 2
