@@ -74,11 +74,10 @@ func reduceFunc(input []mapreduce.KeyValue) (result []mapreduce.KeyValue) {
 	var mapAux map[string]int = make(map[string]int)
 	for _,item := range input {
 		_, ok := mapAux[item.Key]
+		value, _ := strconv.Atoi(item.Value)
 		if ok {
-			value, _ := strconv.Atoi(item.Value)
 			mapAux[item.Key] += value
 		} else {
-			value, _ := strconv.Atoi(item.Value)
 			mapAux[item.Key] = value
 		}
 	}
