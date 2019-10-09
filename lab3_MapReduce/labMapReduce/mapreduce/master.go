@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/rpc"
 	"sync"
+	"fmt"
 )
 
 const (
@@ -80,6 +81,19 @@ func (master *Master) handleFailingWorkers() {
 	/////////////////////////
 	// YOUR CODE GOES HERE //
 	/////////////////////////
+
+	for {
+		worker := <- master.failedWorkerChan
+
+		master.workersMutex.Lock()
+		
+		delete(master.workers, worker.id)
+		master.totalWorkers--
+
+		master.workersMutex.Unlock()
+
+		fmt.Printf("Removing worker %d from master list.\n", worker.id)
+	}
 }
 
 // Handle a single connection until it's done, then closes it.
