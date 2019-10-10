@@ -33,9 +33,6 @@ func mapFunc(input []byte) (result []mapreduce.KeyValue) {
 	result = make([]mapreduce.KeyValue, 0)
 
 	for _, word := range words {
-		//COMPLETAR ESSE CÓDIGO
-		//Basta colocar em result os itens <word,"1">
-		//Lembrando: word em minúsculo!
 		keyvalue := mapreduce.KeyValue{
 			Key: strings.ToLower(word),
 			Value: "1",
