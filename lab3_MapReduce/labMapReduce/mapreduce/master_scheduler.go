@@ -39,7 +39,6 @@ func (master *Master) schedule(task *Task, proc string, filePathChan chan string
 		select {
 			case operation := <-master.failedOperationChan:
 				worker = <-master.idleWorkerChan
-				wg.Add(1)
 				fmt.Printf("Trying to recover %v (ID: '%v' File: '%v')\n", operation.proc, operation.id, operation.filePath)
 				go master.runOperation(worker, operation, &wg)
 			default:
@@ -71,7 +70,6 @@ func (master *Master) runOperation(remoteWorker *RemoteWorker, operation *Operat
 
 	if err != nil {
 		log.Printf("Operation %v '%v' Failed. Error: %v\n", operation.proc, operation.id, err)
-		wg.Done()
 		master.failedOperationChan <- operation
 		master.failedWorkerChan <- remoteWorker
 	} else {

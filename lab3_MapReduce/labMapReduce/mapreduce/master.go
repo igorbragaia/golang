@@ -90,7 +90,6 @@ func (master *Master) handleFailingWorkers() {
 		master.workersMutex.Lock()
 		
 		delete(master.workers, worker.id)
-		master.totalWorkers--
 
 		master.workersMutex.Unlock()
 

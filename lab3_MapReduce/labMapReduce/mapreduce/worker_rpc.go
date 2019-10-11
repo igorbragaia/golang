@@ -17,13 +17,13 @@ func (worker *Worker) RunMap(args *RunArgs, _ *struct{}) error {
 		mapResult []KeyValue
 	)
 
-	// if worker.shouldFail(false) {
-	// 	mapResult = make([]KeyValue, 0)
-	// 	storeLocal(worker.task, args.Id, mapResult)
-	// 	// Allow descriptors to be closed.
-	// 	time.Sleep(time.Duration(100) * time.Millisecond)
-	// 	panic("Induced failure.")
-	// }
+	if worker.shouldFail(false) {
+		mapResult = make([]KeyValue, 0)
+		storeLocal(worker.task, args.Id, mapResult)
+		// Allow descriptors to be closed.
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		panic("Induced failure.")
+	}
 
 	log.Printf("Running map id: %v, path: %v\n", args.Id, args.FilePath)
 
